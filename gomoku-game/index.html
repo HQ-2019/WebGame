@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>五子棋游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="game-container">
+        <h1>五子棋游戏</h1>
+        <div class="settings">
+            <select id="ai-level">
+                <option value="beginner">萌新</option>
+                <option value="master">棋士</option>
+                <option value="expert">宗师</option>
+                <option value="godlike">棋圣</option>
+            </select>
+            <select id="player-color">
+                <option value="black">黑棋</option>
+                <option value="white">白棋</option>
+            </select>
+            <select id="theme-selector">
+                <option value="dark">深色主题</option>
+                <option value="light">浅色主题</option>
+            </select>
+            <button id="start-btn" class="btn">开始游戏</button>
+        </div>
+        <canvas id="board" width="450" height="450"></canvas>
+        <div class="status-container">
+            <div id="status" class="status-text"></div>
+            <button id="win-btn" class="win-btn">黑棋胜利，再来一局</button>
+        </div>
+    </div>
+    <div id="confetti-container"></div>
+    <script src="game.js"></script>
+</body>
+</html>
