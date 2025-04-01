@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>彩色贪吃蛇</title>
+    <!-- <link rel="stylesheet" href="style.css"> -->
+    <style>
+        /* 引入游戏化字体 */
+        @font-face {
+            font-family: 'PressStart2P';
+            src: url('https://fonts.gstatic.com/s/pressstart2p/v14/e3t4euO8T-267oIAQAu6jDQyK3nVivNm4I81.woff2') format('woff2');
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #1c1c1e;
+            color: #fff;
+        }
+
+        .game-container {
+            text-align: center;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+/* 
+        .controls > div {
+            margin-bottom: 15px;
+        }
+
+        label {
+            margin-right: 10px;
+        } */
+
+        button {
+            padding: 8px 16px;
+            margin: 0 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #fedd03;
+            color: #1c1c1e;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #f52d00;
+            color: #fff;
+        }
+
+        #colorPicker {
+            margin: 0 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .speed-controls {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center; /* 保持水平居中 */
+            align-items: center; /* 垂直居中 */
+            gap: 10px;
+        }
+
+        .speed-controls select {
+            padding: 8px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .start-pause-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameCanvas {
+            border: 1px solid #fedd03;
+            background-color: #333;
+            border-radius: 5px;
+        }
+
+        #countdown {
+            font-family: 'PressStart2P', cursive;
+            font-weight: bold;
+            font-size: 100px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1; /* 确保在 gameCanvas 之上 */
+            /* 设置文字渐变色 */
+            background-image: linear-gradient(to right, #fedd03, #f52d00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <div class="controls">
+            <div style="display: flex; justify-content: center; align-items: center;">
+                <p>蛇的颜色: </p>
+                <input type="color" id="colorPicker" value="#ff0000">
+                <div class="speed-controls">
+                    <p>速度:</p>
+                    <select id="speedSelect" onchange="setSpeed(this.value)">
+                        <option value="lowest">超低速</option>
+                        <option value="low" selected>低速</option>
+                        <option value="medium">中速</option>
+                        <option value="high">高速</option>
+                    </select>
+                </div>
+            </div>
+            <div class="start-pause-buttons">
+                <button id="startBtn" onclick="startGame()">开始游戏</button>
+                <button id="pauseBtn" onclick="togglePause()">暂停</button>
+            </div>
+        </div>
+        <div class="canvas-container">
+            <div id="countdown"></div>
+            <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+
+</html>
