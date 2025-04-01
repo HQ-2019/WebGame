@@ -7,12 +7,23 @@ class GomokuGame {
         this.gameOver = false;
         this.aiLevel = 'beginner';
         this.playerColor = 'black';
-        
         this.canvas = document.getElementById('board');
         this.ctx = this.canvas.getContext('2d');
         this.statusEl = document.getElementById('status');
         
         this.initEventListeners();
+        this.drawBoard();
+        
+        // 移动端适配
+        this.adjustCanvasSize();
+        window.addEventListener('resize', () => this.adjustCanvasSize());
+    }
+
+    adjustCanvasSize() {
+        const maxSize = Math.min(window.innerWidth - 40, 450);
+        this.canvas.width = maxSize;
+        this.canvas.height = maxSize;
+        this.cellSize = maxSize / this.boardSize;
         this.drawBoard();
     }
     
@@ -34,7 +45,7 @@ class GomokuGame {
             
             if (x >= 0 && x < this.boardSize && y >= 0 && y < this.boardSize && this.board[y][x] === 0) {
                 this.makeMove(x, y);
-                this.createConfetti();
+                
                 if (!this.gameOver) {
                     setTimeout(() => this.aiMove(), 500);
                 }
@@ -521,9 +532,16 @@ class GomokuGame {
             confetti.style.top = Math.random() * 100 + 'vh';
             confetti.style.left = Math.random() * 100 + 'vw';
             confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+            const duration = Math.random() * 3 + 2;
+            confetti.style.animationDuration = duration + 's';
             confetti.style.width = Math.random() * 10 + 5 + 'px';
             confetti.style.height = Math.random() * 10 + 5 + 'px';
+            
+            // 添加动画结束事件监听器
+            confetti.addEventListener('animationend', () => {
+                confetti.remove();
+            });
+            
             container.appendChild(confetti);
         }
     }

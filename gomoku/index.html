@@ -2,27 +2,28 @@
 <html>
 <head>
     <title>五子棋游戏</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-theme">
     <div class="game-container">
         <h1>五子棋游戏</h1>
         <div class="settings">
-            <select id="ai-level">
+            <select id="ai-level" title="AI难度">
                 <option value="beginner">萌新</option>
-                <option value="master">棋士</option>
+                <option value="master">棋士</option>‘
                 <option value="expert">宗师</option>
                 <option value="godlike">棋圣</option>
             </select>
-            <select id="player-color">
+            <select id="player-color" title="执棋颜色">
                 <option value="black">黑棋</option>
                 <option value="white">白棋</option>
             </select>
-            <select id="theme-selector">
-                <option value="dark">深色主题</option>
-                <option value="light">浅色主题</option>
+            <select id="theme-selector" title="主题颜色">
+                <option value="dark">深色</option>
+                <option value="light">浅色</option>
             </select>
-            <button id="start-btn" class="btn">开始游戏</button>
+            <button id="start-btn" class="btn" title="开始游戏">开始游戏</button>
         </div>
         <canvas id="board" width="450" height="450"></canvas>
         <div class="status-container">
