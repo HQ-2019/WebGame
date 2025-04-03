@@ -1,3 +1,10 @@
+const AI_LEVELS = {
+    beginner: 'beginner',
+    master: 'master',
+    expert: 'expert',
+    godlike: 'godlike'
+}
+
 class GomokuGame {
     constructor() {
         this.boardSize = 15;
@@ -5,12 +12,13 @@ class GomokuGame {
         this.board = Array(this.boardSize).fill().map(() => Array(this.boardSize).fill(0));
         this.currentPlayer = 1; // 1: 黑棋, 2: 白棋
         this.gameOver = false;
-        this.aiLevel = 'beginner';
+        this.aiLevel = AI_LEVELS.beginner;
         this.playerColor = 'black';
         this.canvas = document.getElementById('board');
         this.ctx = this.canvas.getContext('2d');
         this.statusEl = document.getElementById('status');
-        
+        this.previewPiece = { x: -1, y: -1, visible: false };
+
         this.initEventListeners();
         this.drawBoard();
         
@@ -28,36 +36,116 @@ class GomokuGame {
     }
     
     initEventListeners() {
+         // 添加主题选择器事件监听器
+         document.getElementById('theme-selector').addEventListener('change', () => {
+             document.body.className = this.themeSelector.value + '-theme';
+         });
+
+        // 添加开始按钮事件监听器
         document.getElementById('start-btn').addEventListener('click', () => {
             this.resetGame();
         });
-        
-        this.canvas.addEventListener('click', (e) => {
-            if (this.gameOver || 
-                (this.currentPlayer === 1 && this.playerColor === 'white') || 
-                (this.currentPlayer === 2 && this.playerColor === 'black')) {
-                return;
-            }
-            
-            const rect = this.canvas.getBoundingClientRect();
-            const x = Math.floor((e.clientX - rect.left) / this.cellSize);
-            const y = Math.floor((e.clientY - rect.top) / this.cellSize);
-            
-            if (x >= 0 && x < this.boardSize && y >= 0 && y < this.boardSize && this.board[y][x] === 0) {
-                this.makeMove(x, y);
-                
-                if (!this.gameOver) {
-                    setTimeout(() => this.aiMove(), 500);
-                }
-            }
-        });
+
+        // 添加触摸和鼠标事件
+        this.canvas.addEventListener('mousedown', this.handleDown.bind(this));
+        this.canvas.addEventListener('mousemove', this.handleMove.bind(this));
+        this.canvas.addEventListener('mouseup', this.handleUp.bind(this));
+        this.canvas.addEventListener('touchstart', this.handleDown.bind(this));
+        this.canvas.addEventListener('touchmove', this.handleMove.bind(this));
+        this.canvas.addEventListener('touchend', this.handleUp.bind(this));
     }
+
+    // 处理按下事件
+    handleDown(e) {
+        e.preventDefault(); // 阻止默认行为
+        if (this.gameOver || 
+            (this.currentPlayer === 1 && this.playerColor === 'white') || 
+            (this.currentPlayer === 2 && this.playerColor === 'black')) {
+            return;
+        }
+        
+        const pos = this.getPosition(e);
+        const { x, y } = pos;
+        
+        if (x >= 0 && x < this.boardSize && y >= 0 && y < this.boardSize && this.board[y][x] === 0) {
+            this.previewPiece = { x, y, visible: true };
+            this.drawBoard();
+        }
+    }
+
+    // 处理移动事件
+    handleMove(e) {
+        e.preventDefault(); // 阻止默认行为
+        if (!this.previewPiece.visible) return;
+        
+        const pos = this.getPosition(e);
+        const { x, y } = pos;
+        
+        if (x >= 0 && x < this.boardSize && y >= 0 && y < this.boardSize && this.board[y][x] === 0) {
+            this.previewPiece.x = x;
+            this.previewPiece.y = y;
+            this.drawBoard();
+        }
+    }
+
+    // 处理释放事件
+    handleUp(e) {
+        if (!this.previewPiece.visible) return;
+        
+        const pos = this.getPosition(e);
+        const { x, y } = pos;
+        
+        if (x >= 0 && x < this.boardSize && y >= 0 && y < this.boardSize && this.board[y][x] === 0) {
+            this.makeMove(x, y);
+            
+            if (!this.gameOver) {
+                setTimeout(() => this.aiMove(), 500);
+            }
+        }
+        
+        this.previewPiece.visible = false;
+        this.drawBoard();
+    }
+
+    // 获取点击位置
+    getPosition(e) {
+        const rect = this.canvas.getBoundingClientRect();
     
+        let clientX, clientY;
+    
+        if (e.clientX !== undefined) {
+            // 鼠标事件
+            clientX = e.clientX;
+            clientY = e.clientY;
+        } else if (e.touches?.length > 0) {
+            // 触摸事件
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else if (e.changedTouches?.length > 0) {
+            // touchend事件
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        } else {
+            console.warn("无法获取点击位置", e);
+            return { x: -1, y: -1 };
+        }
+    
+        // 计算 canvas 缩放比例，防止 CSS 缩放影响计算
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+    
+        // 转换坐标，确保基于实际的 canvas 坐标计算
+        const x = Math.floor(((clientX - rect.left) * scaleX) / this.cellSize);
+        const y = Math.floor(((clientY - rect.top) * scaleY) / this.cellSize);
+    
+        return { x, y };
+    }
+
     // 重置游戏
     resetGame() {
         this.board = Array(this.boardSize).fill().map(() => Array(this.boardSize).fill(0));
         this.gameOver = false;
-        this.aiLevel = document.getElementById('ai-level').value;
+        this.aiLevel = AI_LEVELS[document.getElementById('ai-level').value] || AI_LEVELS.beginner;
         this.playerColor = document.getElementById('player-color').value;
         this.currentPlayer = 1;
         
@@ -71,7 +159,7 @@ class GomokuGame {
             setTimeout(() => this.aiMove(), 500);
         }
     }
-    
+
     // 绘制棋盘
     drawBoard() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -104,6 +192,15 @@ class GomokuGame {
                 }
             }
         }
+        
+        // 绘制预览棋子
+        if (this.previewPiece.visible) {
+            this.drawPiece(
+                this.previewPiece.x, 
+                this.previewPiece.y, 
+                this.currentPlayer === 1 ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)'
+            );
+        }
     }
     
     // 绘制棋子
@@ -129,35 +226,36 @@ class GomokuGame {
             this.gameOver = true;
             const winner = this.currentPlayer === 1 ? '黑棋' : '白棋';
             this.statusEl.textContent = `游戏结束，${winner}获胜！`;
-            this.showWinAnimation(`${winner}获胜, 再来一局`);
+            this.showWinAnimation(`${winner}胜`);
             return;
         }
         
         if (this.checkDraw()) {
             this.gameOver = true;
             this.statusEl.textContent = '游戏结束，平局！';
-            this.showWinAnimation("平局, 再来一局");
+            this.showWinAnimation("平局");
             return;
         }
         
         this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
         this.updateStatus();
     }
-    
+
+    // AI落子
     aiMove() {
         let x, y;
         
         switch (this.aiLevel) {
-            case 'beginner':
+            case AI_LEVELS.beginner:
                 [x, y] = this.getSmartMove(1);
                 break;
-            case 'master':
+            case AI_LEVELS.master:
                 [x, y] = this.getSmartMove(3);
                 break;
-            case 'expert':
+            case AI_LEVELS.expert:
                 [x, y] = this.getSmartMove(5);
                 break;
-            case 'godlike':
+            case AI_LEVELS.godlike:
                 [x, y] = this.getSmartMove(8);
                 break;
         }
@@ -198,7 +296,7 @@ class GomokuGame {
         
         // 根据AI等级调整防守策略
         switch(this.aiLevel) {
-            case 'beginner': // 萌新 - 只防守直接威胁
+            case AI_LEVELS.beginner: // 萌新 - 只防守直接威胁
                 // 检查对手立即获胜的位置
                 for (let y = 0; y < this.boardSize; y++) {
                     for (let x = 0; x < this.boardSize; x++) {
@@ -214,7 +312,7 @@ class GomokuGame {
                 }
                 break;
                 
-            case 'master': // 棋士 - 防守活四和直接威胁
+            case AI_LEVELS.master: // 棋士 - 防守活四和直接威胁
                 for (let y = 0; y < this.boardSize; y++) {
                     for (let x = 0; x < this.boardSize; x++) {
                         if (this.board[y][x] === 0) {
@@ -234,7 +332,7 @@ class GomokuGame {
                 }
                 break;
                 
-            case 'expert': // 宗师 - 防守活三及以上
+            case AI_LEVELS.expert: // 宗师 - 防守活三及以上
                 for (let y = 0; y < this.boardSize; y++) {
                     for (let x = 0; x < this.boardSize; x++) {
                         if (this.board[y][x] === 0) {
@@ -254,7 +352,7 @@ class GomokuGame {
                 }
                 break;
                 
-            case 'godlike': // 棋圣 - 防守活三及以上
+            case AI_LEVELS.godlike: // 棋圣 - 防守活三及以上
                 for (let y = 0; y < this.boardSize; y++) {
                     for (let x = 0; x < this.boardSize; x++) {
                         if (this.board[y][x] === 0) {
@@ -264,7 +362,7 @@ class GomokuGame {
                                 this.board[y][x] = 0;
                                 return [x, y];
                             }
-                            const isAlmostWin = this.checkAlmostWinLevel(x, y, opponent, 3);
+                            const isAlmostWin = this.checkAlmostWinLevel(x, y, opponent, 2);
                             this.board[y][x] = 0;
                             console.log(`Checking for almost win at (${x}, ${y}): ${isAlmostWin}`);
                             if (isAlmostWin) {
@@ -491,6 +589,7 @@ class GomokuGame {
         return false;
     }
     
+    // 检查是否还有落子的位置
     checkDraw() {
         for (let y = 0; y < this.boardSize; y++) {
             for (let x = 0; x < this.boardSize; x++) {
@@ -507,23 +606,33 @@ class GomokuGame {
         this.statusEl.textContent = `轮到${player}下棋`;
     }
 
+    // 显示胜利动画
     showWinAnimation(winText) {
         const winBtn = document.getElementById('win-btn');
-        
-        winBtn.textContent = winText;
+        winBtn.textContent = winText + ', 再战一局';
         winBtn.classList.add('show');
-        
         winBtn.onclick = () => {
             this.resetGame();
         };
         
-        this.createConfetti();
-    }
-
-    createConfetti() {
+        // 显示胜利文字和烟花效果
         const container = document.getElementById('confetti-container');
         container.innerHTML = '';
         
+        // 添加胜利文字
+        const victoryText = document.createElement('div');
+        victoryText.textContent = winText;
+        victoryText.style.position = 'fixed';
+        victoryText.style.top = '50%';
+        victoryText.style.left = '50%';
+        victoryText.style.transform = 'translate(-50%, -50%)';
+        victoryText.style.fontSize = '5rem';
+        victoryText.style.fontWeight = 'bold';
+        victoryText.style.color = '#fff';
+        victoryText.style.textShadow = '0 0 10px #000';
+        container.appendChild(victoryText);
+        
+        // 添加烟花效果
         const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
         
         for (let i = 0; i < 100; i++) {
@@ -540,6 +649,7 @@ class GomokuGame {
             // 添加动画结束事件监听器
             confetti.addEventListener('animationend', () => {
                 confetti.remove();
+                victoryText.remove();
             });
             
             container.appendChild(confetti);
@@ -549,12 +659,3 @@ class GomokuGame {
 
 // 初始化游戏
 const game = new GomokuGame();
-
-// 在GomokuGame类的constructor中添加
-this.themeSelector = document.getElementById('theme-selector');
-this.themeSelector.addEventListener('change', () => {
-    document.body.className = this.themeSelector.value + '-theme';
-});
-
-// 在resetGame方法中添加
-document.body.className = this.themeSelector.value + '-theme';
