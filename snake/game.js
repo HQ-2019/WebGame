@@ -25,7 +25,6 @@ let gameLoop;   // 游戏（蛇）主循环定时器
 let foodUpdateLoop; // 食物移动的定时器
 let initialLength = 5; // 蛇的初始长度
 let snakeColor; // 蛇的颜色
-let isPaused = false;    // 游戏暂停状态
 const GRID_SIZE = 20;     // 网格大小
 const FOOD_COUNT = 20;    // 食物数量
 const COLORS = ['#9542f5', '#02a35a', '#00c2db', '#fcd226', '#fc4482', 'ff0000'];  // 颜色数组
@@ -35,6 +34,17 @@ const MAX_FOOD_COUNT = FOOD_COUNT * 1.5; // 最大食物数量为初始数量的
 const REMOVE_FOOD_INTERVAL = 5000; // 每5秒检查一次是否需要移除多余的食物
 const FOOD_UPDATE_INTERVAL = 50; // 食物移动更新间隔(毫秒)
 let lastRemoveTime = 0; // 上次移除食物的时间
+
+// 定义游戏状态常量
+const GAME_STATUS = {
+    none: 0,
+    playing: 1,
+    paused: 2,
+    over: 3
+}
+
+// 游戏状态初始化为none
+let gameStatus = GAME_STATUS.none;
 
 // 定义蛇的速度级别和对应的速度值
 const SPEED_LEVELS = {
@@ -149,14 +159,36 @@ class Food {
     }
 }
 
+// 切换游戏状态
+function toggleGameState() {
+    const controlBtn = document.getElementById('gameControlBtn');
+    
+    switch(gameStatus) {
+        case GAME_STATUS.none:
+        case GAME_STATUS.over:
+            startGame(()=> {
+                gameStatus = GAME_STATUS.playing;
+                controlBtn.textContent = '暂停';
+            });
+            break;
+        case GAME_STATUS.playing:
+            pauseGame();
+            controlBtn.textContent = '继续';
+            gameStatus = GAME_STATUS.paused;
+            break;
+        case GAME_STATUS.paused:
+            resumeGame();
+            controlBtn.textContent = '暂停';
+            gameStatus = GAME_STATUS.playing;
+            break;
+    }
+}
+
 // 开始游戏
-function startGame() {
+function startGame(startedCallback) {
     if (gameLoop) clearInterval(gameLoop);
     if (foodUpdateLoop) clearInterval(foodUpdateLoop);
-    
-    isPaused = false;
-    document.getElementById('pauseBtn').textContent = '暂停';
-    
+        
     const startX = Math.floor(CANVAS_WIDTH / 2 / GRID_SIZE) * GRID_SIZE;
     const startY = Math.floor(CANVAS_HEIGHT / 2 / GRID_SIZE) * GRID_SIZE;
 
@@ -189,7 +221,11 @@ function startGame() {
             countdownDiv.style.display = 'none';
             clearInterval(countDownLoop);
             // 开始游戏主循环, 控制小蛇移动
-            gameLoop = setInterval(updateSnake, currentSpeed); 
+            gameLoop = setInterval(updateSnake, currentSpeed);
+            // 回调游戏已开始
+            if (typeof startedCallback === 'function') {
+                startedCallback();
+            }
         } else if (countdown === 0) {
             countdownDiv.textContent = "GO";
         } else {
@@ -200,24 +236,47 @@ function startGame() {
 }
 
 // 暂停游戏
-function togglePause() {
-    isPaused = !isPaused;
-    const pauseBtn = document.getElementById('pauseBtn');
-    pauseBtn.textContent = isPaused ? '继续' : '暂停';
+function pauseGame() {
+    clearInterval(gameLoop);
+    clearInterval(foodUpdateLoop);
+}
+
+// 继续游戏
+function resumeGame() {
+    gameLoop = setInterval(updateSnake, currentSpeed);
+    foodUpdateLoop = setInterval(updateFood, FOOD_UPDATE_INTERVAL);
+}
+
+// 游戏结束
+function gameOver() {
+    const controlBtn = document.getElementById('gameControlBtn');
+    controlBtn.textContent = '重新开始';
+    gameStatus = GAME_STATUS.over;
     
-    if (isPaused) {
-        clearInterval(gameLoop);
-        clearInterval(foodUpdateLoop);
-    } else {
-        gameLoop = setInterval(updateSnake, currentSpeed);
-        foodUpdateLoop = setInterval(updateFood, FOOD_UPDATE_INTERVAL);
-    }
+    // 创建爆炸效果
+    const tail = snake[0];
+    createExplosion(
+        tail.x + GRID_SIZE / 2,
+        tail.y + GRID_SIZE / 2,
+        snakeColor
+    );
+
+    const snakeLenght = snake.length;
+    
+    // 重置蛇
+    snake = [];
+    clearInterval(gameLoop);
+
+    // 延迟一秒后执行弹窗
+    setTimeout(() => {
+        alert(`游戏结束！\n最终长度: ${snakeLenght}`);
+    }, 1000);
 }
 
 // 添加速度控制函数
 function setSpeed(level) {
     currentSpeed = SPEED_LEVELS[level];
-    if (gameLoop && !isPaused) {
+    if (gameLoop && gameStatus === GAME_STATUS.playing) {
         clearInterval(gameLoop);
         gameLoop = setInterval(updateSnake, currentSpeed);
     }
@@ -328,7 +387,7 @@ function removeExcessFood() {
 
 // 更新食物
 function updateFood() {
-    if (isPaused) return;
+    if (gameStatus !== GAME_STATUS.playing && gameStatus !== GAME_STATUS.over) return;
     
     // 更新食物位置
     food = food.filter(f => f.move());
@@ -376,7 +435,7 @@ function updateFood() {
 
 // 更新蛇状态
 function updateSnake() {
-    if (isPaused) return;
+    if (gameStatus!== GAME_STATUS.playing) return;
 
     // 检查蛇的长度，长度小于最小长度时结束游戏
     if (snake.length < MIN_SNAKE_LENGHT) {
@@ -487,11 +546,6 @@ function draw() {
     // 清空画布
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         
-    // ctx.fillStyle = 'red';
-    // ctx.beginPath();
-    // ctx.arc(10.0, 10.0, 10, 0, Math.PI * 2);
-    // ctx.fill();
-    
     // 绘制蛇
     snake.forEach((segment, index) => {
         ctx.fillStyle = snakeColor;
@@ -522,47 +576,52 @@ function draw() {
     });
 }
 
-// 游戏结束
-function gameOver() {
-    // 创建爆炸效果
-    const tail = snake[0];
-    createExplosion(
-        tail.x + GRID_SIZE / 2,
-        tail.y + GRID_SIZE / 2,
-        snakeColor
-    );
-
-    const snakeLenght = snake.length;
-    
-    // 重置蛇
-    snake = [];
-    clearInterval(gameLoop);
-    // clearInterval(foodUpdateLoop);
-
-    // 延迟一秒后执行弹窗
-    setTimeout(() => {
-        alert(`游戏结束！\n最终长度: ${snakeLenght}`);
-    }, 1000);
-}
-
-// 键盘控制
+// 添加键盘事件监听
 document.addEventListener('keydown', (e) => {
+    // 阻止方向键和WASD的默认行为（防止按钮聚焦）
+    if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+        e.preventDefault();
+    }
+    
+    // 按下方向键或WASD键时改变蛇的方向
+    // 要立即更新蛇的状态，防止蛇反应滞后
+    // 快速连续按方向键时，可以达到临时加速的效果
     switch(e.key.toLowerCase()) {
         case 'arrowup':
         case 'w':
-            if (direction !== 'down') direction = 'up';
+            if (direction !== 'down') {
+                direction = 'up';
+                if (gameStatus === GAME_STATUS.playing) {
+                    updateSnake();
+                }
+            }
             break;
         case 'arrowdown':
         case 's':
-            if (direction !== 'up') direction = 'down';
+            if (direction !== 'up') {
+                direction = 'down';
+                if (gameStatus === GAME_STATUS.playing) {
+                    updateSnake();
+                }
+            }
             break;
         case 'arrowleft':
         case 'a':
-            if (direction !== 'right') direction = 'left';
+            if (direction !== 'right') {
+                direction = 'left';
+                if (gameStatus === GAME_STATUS.playing) {
+                    updateSnake();
+                }
+            };
             break;
         case 'arrowright':
         case 'd':
-            if (direction !== 'left') direction = 'right';
+            if (direction !== 'left') {
+                direction = 'right';
+                if (gameStatus === GAME_STATUS.playing) {
+                    updateSnake();
+                }
+            };
             break;
     }
 });

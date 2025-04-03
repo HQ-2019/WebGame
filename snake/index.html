@@ -3,6 +3,8 @@
 
 <head>
     <title>彩色贪吃蛇</title>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <!-- <link rel="stylesheet" href="style.css"> -->
     <style>
         /* 引入游戏化字体 */
@@ -29,22 +31,15 @@
         .controls {
             margin: 20px 0;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-        }
-/* 
-        .controls > div {
-            margin-bottom: 15px;
+            gap: 20px;
         }
 
-        label {
-            margin-right: 10px;
-        } */
-
-        button {
+        #gameControlBtn {
             padding: 8px 16px;
-            margin: 0 10px;
             font-size: 16px;
+            height: 35px;
             cursor: pointer;
             background-color: #fedd03;
             color: #1c1c1e;
@@ -53,16 +48,32 @@
             transition: background-color 0.3s ease;
         }
 
-        button:hover {
+        #gameControlBtn:hover {
             background-color: #f52d00;
             color: #fff;
         }
 
         #colorPicker {
-            margin: 0 10px;
+            /* margin: 0 20px; */
+            height: 35px;
+            width: 80px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            background-color: #3d3d3d;
+            color: #fff;
+        }
+
+        select {
+            padding: 10px 15px;
+            height: 35px;
+            border-radius: 5px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: #3d3d3d;
+            color: #fff;
         }
 
         .speed-controls {
@@ -121,23 +132,14 @@
 <body>
     <div class="game-container">
         <div class="controls">
-            <div style="display: flex; justify-content: center; align-items: center;">
-                <p>蛇的颜色: </p>
-                <input type="color" id="colorPicker" value="#ff0000">
-                <div class="speed-controls">
-                    <p>速度:</p>
-                    <select id="speedSelect" onchange="setSpeed(this.value)">
-                        <option value="lowest">超低速</option>
-                        <option value="low" selected>低速</option>
-                        <option value="medium">中速</option>
-                        <option value="high">高速</option>
-                    </select>
-                </div>
-            </div>
-            <div class="start-pause-buttons">
-                <button id="startBtn" onclick="startGame()">开始游戏</button>
-                <button id="pauseBtn" onclick="togglePause()">暂停</button>
-            </div>
+            <input type="color" id="colorPicker" value="#ff0000">
+            <select id="speedSelect" onchange="setSpeed(this.value); this.blur();">
+                <option value="lowest">超低速</option>
+                <option value="low" selected>低速</option>
+                <option value="medium">中速</option>
+                <option value="high">高速</option>
+            </select>
+            <button id="gameControlBtn" onclick="toggleGameState(); this.blur();">开始游戏</button>
         </div>
         <div class="canvas-container">
             <div id="countdown"></div>
