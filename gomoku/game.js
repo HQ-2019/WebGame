@@ -18,6 +18,7 @@ class GomokuGame {
         this.ctx = this.canvas.getContext('2d');
         this.statusEl = document.getElementById('status');
         this.previewPiece = { x: -1, y: -1, visible: false };
+        this.themeSelector = document.getElementById('theme-selector');
 
         this.initEventListeners();
         this.drawBoard();
@@ -36,10 +37,10 @@ class GomokuGame {
     }
     
     initEventListeners() {
-         // 添加主题选择器事件监听器
-         document.getElementById('theme-selector').addEventListener('change', () => {
-             document.body.className = this.themeSelector.value + '-theme';
-         });
+        // 添加主题选择器事件监听器
+        this.themeSelector.addEventListener('change', () => {
+            document.body.className = this.themeSelector.value + '-theme';
+        });
 
         // 添加开始按钮事件监听器
         document.getElementById('start-btn').addEventListener('click', () => {
